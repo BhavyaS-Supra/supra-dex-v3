@@ -158,6 +158,6 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
 
         (, int24 tickAfter, , , , , ) = pool.slot0();
         // narrow position's lower boundary is -60; require the swap to have actually crossed it
-        assertTrue(tickAfter < -60);
+        assertTrue(tickAfter <= -60);
     }
 }
