@@ -154,7 +154,7 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         (, int24 tickBefore, , , , , ) = pool.slot0();
         assertEq(int256(tickBefore), int256(0));
 
-        pool.swap(address(this), true, 2_000_000, TickMath.MIN_SQRT_RATIO + 1, '');
+        pool.swap(address(this), true, 2_000_000_000_000_000_000, TickMath.MIN_SQRT_RATIO + 1, '');
 
         (, int24 tickAfter, , , , , ) = pool.slot0();
         // narrow position's lower boundary is -60; require the swap to have actually crossed it
