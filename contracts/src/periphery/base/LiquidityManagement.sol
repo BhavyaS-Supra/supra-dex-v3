@@ -22,11 +22,7 @@ abstract contract LiquidityManagement is ISupraV3MintCallback, PeripheryImmutabl
     }
 
     /// @inheritdoc ISupraV3MintCallback
-    function uniswapV3MintCallback(
-        uint256 amount0Owed,
-        uint256 amount1Owed,
-        bytes calldata data
-    ) external override {
+    function uniswapV3MintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata data) external override {
         MintCallbackData memory decoded = abi.decode(data, (MintCallbackData));
         CallbackValidation.verifyCallback(factory, decoded.poolKey);
 
@@ -50,12 +46,7 @@ abstract contract LiquidityManagement is ISupraV3MintCallback, PeripheryImmutabl
     /// @notice Add liquidity to an initialized pool
     function addLiquidity(AddLiquidityParams memory params)
         internal
-        returns (
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1,
-            ISupraV3Pool pool
-        )
+        returns (uint128 liquidity, uint256 amount0, uint256 amount1, ISupraV3Pool pool)
     {
         PoolAddress.PoolKey memory poolKey =
             PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
@@ -64,16 +55,12 @@ abstract contract LiquidityManagement is ISupraV3MintCallback, PeripheryImmutabl
 
         // compute the liquidity amount
         {
-            (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+            (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
             uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
             uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
 
             liquidity = LiquidityAmounts.getLiquidityForAmounts(
-                sqrtPriceX96,
-                sqrtRatioAX96,
-                sqrtRatioBX96,
-                params.amount0Desired,
-                params.amount1Desired
+                sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, params.amount0Desired, params.amount1Desired
             );
         }
 

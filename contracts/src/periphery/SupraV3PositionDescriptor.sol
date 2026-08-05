@@ -22,20 +22,8 @@ contract SupraV3PositionDescriptor is ISupraV3PositionDescriptor {
         override
         returns (string memory)
     {
-        (
-            ,
-            ,
-            address token0,
-            address token1,
-            uint24 fee,
-            int24 tickLower,
-            int24 tickUpper,
-            uint128 liquidity,
-            ,
-            ,
-            ,
-
-        ) = positionManager.positions(tokenId);
+        (,, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity,,,,) =
+            positionManager.positions(tokenId);
 
         return _buildTokenURI(token0, token1, fee, tickLower, tickUpper, liquidity, tokenId);
     }
@@ -65,16 +53,15 @@ contract SupraV3PositionDescriptor is ISupraV3PositionDescriptor {
     function _header(address token0, address token1) private view returns (bytes memory) {
         string memory symbol0 = _symbol(token0);
         string memory symbol1 = _symbol(token1);
-        return
-            abi.encodePacked(
-                '{"name":"Supra V3 Position",',
-                '"description":"Liquidity position in a Supra V3 ',
-                symbol0,
-                '/',
-                symbol1,
-                ' pool.",',
-                '"attributes":['
-            );
+        return abi.encodePacked(
+            '{"name":"Supra V3 Position",',
+            '"description":"Liquidity position in a Supra V3 ',
+            symbol0,
+            '/',
+            symbol1,
+            ' pool.",',
+            '"attributes":['
+        );
     }
 
     function _attr(string memory traitType, string memory value) private pure returns (bytes memory) {

@@ -32,20 +32,12 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         pool.initialize(TickMath.getSqrtRatioAtTick(0));
     }
 
-    function uniswapV3MintCallback(
-        uint256 amount0Owed,
-        uint256 amount1Owed,
-        bytes calldata
-    ) external override {
+    function uniswapV3MintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata) external override {
         if (amount0Owed > 0) token0Erc.transfer(msg.sender, amount0Owed);
         if (amount1Owed > 0) token1Erc.transfer(msg.sender, amount1Owed);
     }
 
-    function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes calldata
-    ) external override {
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata) external override {
         if (amount0Delta > 0) token0Erc.transfer(msg.sender, uint256(amount0Delta));
         if (amount1Delta > 0) token1Erc.transfer(msg.sender, uint256(amount1Delta));
     }
@@ -55,7 +47,7 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
     }
 
     function test_Initialize() public {
-        (uint160 sqrtPriceX96, int24 tick, , , , , bool unlocked) = pool.slot0();
+        (uint160 sqrtPriceX96, int24 tick,,,,, bool unlocked) = pool.slot0();
         assertEq(uint256(sqrtPriceX96), uint256(TickMath.getSqrtRatioAtTick(0)));
         assertEq(int256(tick), int256(0));
         assertTrue(unlocked);
@@ -68,7 +60,7 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         assertEq(uint256(pool.liquidity()), uint256(1_000_000));
 
         bytes32 positionKey = keccak256(abi.encodePacked(address(this), LOW_TICK, HIGH_TICK));
-        (uint128 posLiquidity, , , , ) = pool.positions(positionKey);
+        (uint128 posLiquidity,,,,) = pool.positions(positionKey);
         assertEq(uint256(posLiquidity), uint256(1_000_000));
     }
 
@@ -83,13 +75,8 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         uint256 token1BalBefore = token1Erc.balanceOf(address(this));
         int256 amountSpecified = 1000;
 
-        (int256 amount0, int256 amount1) = pool.swap(
-            address(this),
-            true,
-            amountSpecified,
-            TickMath.MIN_SQRT_RATIO + 1,
-            ''
-        );
+        (int256 amount0, int256 amount1) =
+            pool.swap(address(this), true, amountSpecified, TickMath.MIN_SQRT_RATIO + 1, '');
 
         assertEq(amount0, amountSpecified);
         assertTrue(amount1 < 0);
@@ -102,13 +89,8 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         uint256 token0BalBefore = token0Erc.balanceOf(address(this));
         int256 amountSpecified = 1000;
 
-        (int256 amount0, int256 amount1) = pool.swap(
-            address(this),
-            false,
-            amountSpecified,
-            TickMath.MAX_SQRT_RATIO - 1,
-            ''
-        );
+        (int256 amount0, int256 amount1) =
+            pool.swap(address(this), false, amountSpecified, TickMath.MAX_SQRT_RATIO - 1, '');
 
         assertEq(amount1, amountSpecified);
         assertTrue(amount0 < 0);
@@ -126,13 +108,8 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         uint256 token0BalBefore = token0Erc.balanceOf(address(this));
         uint256 token1BalBefore = token1Erc.balanceOf(address(this));
 
-        (uint128 collected0, uint128 collected1) = pool.collect(
-            address(this),
-            LOW_TICK,
-            HIGH_TICK,
-            type(uint128).max,
-            type(uint128).max
-        );
+        (uint128 collected0, uint128 collected1) =
+            pool.collect(address(this), LOW_TICK, HIGH_TICK, type(uint128).max, type(uint128).max);
 
         assertEq(uint256(collected0), burnAmount0);
         assertEq(uint256(collected1), burnAmount1);
@@ -151,12 +128,12 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         _mintLiquidity(5_000_000);
         pool.mint(address(this), -600, 600, 5_000_000, '');
 
-        (, int24 tickBefore, , , , , ) = pool.slot0();
+        (, int24 tickBefore,,,,,) = pool.slot0();
         assertEq(int256(tickBefore), int256(0));
 
         pool.swap(address(this), true, 2_000_000_000_000_000_000, TickMath.MIN_SQRT_RATIO + 1, '');
 
-        (, int24 tickAfter, , , , , ) = pool.slot0();
+        (, int24 tickAfter,,,,,) = pool.slot0();
         // narrow position's lower boundary is -60; require the swap to have actually crossed it
         assertTrue(tickAfter < tickBefore, "tick should decrease after zeroForOne swap");
     }

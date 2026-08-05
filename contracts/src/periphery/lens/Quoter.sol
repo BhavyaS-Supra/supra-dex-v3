@@ -26,28 +26,19 @@ contract Quoter is IQuoter, ISupraV3SwapCallback, PeripheryImmutableState {
 
     constructor(address _factory, address _WETH9) PeripheryImmutableState(_factory, _WETH9) {}
 
-    function getPool(
-        address tokenA,
-        address tokenB,
-        uint24 fee
-    ) private view returns (ISupraV3Pool) {
+    function getPool(address tokenA, address tokenB, uint24 fee) private view returns (ISupraV3Pool) {
         return ISupraV3Pool(PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, fee)));
     }
 
     /// @inheritdoc ISupraV3SwapCallback
-    function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes memory path
-    ) external view override {
+    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes memory path) external view override {
         require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
         (address tokenIn, address tokenOut, uint24 fee) = path.decodeFirstPool();
         CallbackValidation.verifyCallback(factory, tokenIn, tokenOut, fee);
 
-        (bool isExactInput, uint256 amountToPay, uint256 amountReceived) =
-            amount0Delta > 0
-                ? (tokenIn < tokenOut, uint256(amount0Delta), uint256(-amount1Delta))
-                : (tokenOut < tokenIn, uint256(amount1Delta), uint256(-amount0Delta));
+        (bool isExactInput, uint256 amountToPay, uint256 amountReceived) = amount0Delta > 0
+            ? (tokenIn < tokenOut, uint256(amount0Delta), uint256(-amount1Delta))
+            : (tokenOut < tokenIn, uint256(amount1Delta), uint256(-amount0Delta));
         if (isExactInput) {
             assembly {
                 let ptr := mload(0x40)
@@ -87,8 +78,8 @@ contract Quoter is IQuoter, ISupraV3SwapCallback, PeripheryImmutableState {
     ) public override returns (uint256 amountOut) {
         bool zeroForOne = tokenIn < tokenOut;
 
-        try
-            getPool(tokenIn, tokenOut, fee).swap(
+        try getPool(tokenIn, tokenOut, fee)
+            .swap(
                 address(this), // address(0) might cause issues with some tokens
                 zeroForOne,
                 amountIn.toInt256(),
@@ -96,8 +87,8 @@ contract Quoter is IQuoter, ISupraV3SwapCallback, PeripheryImmutableState {
                     ? (zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1)
                     : sqrtPriceLimitX96,
                 abi.encodePacked(tokenIn, fee, tokenOut)
-            )
-        {} catch (bytes memory reason) {
+            ) {}
+        catch (bytes memory reason) {
             return parseRevertReason(reason);
         }
     }
@@ -133,8 +124,8 @@ contract Quoter is IQuoter, ISupraV3SwapCallback, PeripheryImmutableState {
 
         // if no price limit has been specified, cache the output amount for comparison in the swap callback
         if (sqrtPriceLimitX96 == 0) amountOutCached = amountOut;
-        try
-            getPool(tokenIn, tokenOut, fee).swap(
+        try getPool(tokenIn, tokenOut, fee)
+            .swap(
                 address(this), // address(0) might cause issues with some tokens
                 zeroForOne,
                 -amountOut.toInt256(),
@@ -142,8 +133,8 @@ contract Quoter is IQuoter, ISupraV3SwapCallback, PeripheryImmutableState {
                     ? (zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1)
                     : sqrtPriceLimitX96,
                 abi.encodePacked(tokenOut, fee, tokenIn)
-            )
-        {} catch (bytes memory reason) {
+            ) {}
+        catch (bytes memory reason) {
             if (sqrtPriceLimitX96 == 0) delete amountOutCached; // clear cache
             return parseRevertReason(reason);
         }

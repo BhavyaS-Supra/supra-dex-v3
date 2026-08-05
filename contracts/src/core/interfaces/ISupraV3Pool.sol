@@ -19,6 +19,4 @@ interface ISupraV3Pool is
     ISupraV3PoolActions,
     ISupraV3PoolOwnerActions,
     ISupraV3PoolEvents
-{
-
-}
+{}

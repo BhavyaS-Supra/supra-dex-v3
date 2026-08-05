@@ -45,11 +45,7 @@ contract SupraV3SwapRouterTest is Test, ISupraV3MintCallback {
         tokenC.approve(address(router), type(uint256).max);
     }
 
-    function uniswapV3MintCallback(
-        uint256 amount0Owed,
-        uint256 amount1Owed,
-        bytes calldata data
-    ) external override {
+    function uniswapV3MintCallback(uint256 amount0Owed, uint256 amount1Owed, bytes calldata data) external override {
         (address token0, address token1) = abi.decode(data, (address, address));
         if (amount0Owed > 0) TestERC20(token0).transfer(msg.sender, amount0Owed);
         if (amount1Owed > 0) TestERC20(token1).transfer(msg.sender, amount1Owed);
@@ -86,7 +82,8 @@ contract SupraV3SwapRouterTest is Test, ISupraV3MintCallback {
     function test_ExactInput_MultiHop() public {
         uint256 balBefore = tokenC.balanceOf(address(this));
 
-        bytes memory path = abi.encodePacked(address(tokenA), uint24(3000), address(tokenB), uint24(3000), address(tokenC));
+        bytes memory path =
+            abi.encodePacked(address(tokenA), uint24(3000), address(tokenB), uint24(3000), address(tokenC));
 
         uint256 amountOut = router.exactInput(
             ISupraV3SwapRouter.ExactInputParams({
