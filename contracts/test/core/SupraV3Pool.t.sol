@@ -157,6 +157,7 @@ contract SupraV3PoolTest is Test, ISupraV3MintCallback, ISupraV3SwapCallback {
         pool.swap(address(this), true, 2_000_000, TickMath.MIN_SQRT_RATIO + 1, '');
 
         (, int24 tickAfter, , , , , ) = pool.slot0();
-        assertTrue(tickAfter < tickBefore);
+        // narrow position's lower boundary is -60; require the swap to have actually crossed it
+        assertTrue(tickAfter < -60);
     }
 }
