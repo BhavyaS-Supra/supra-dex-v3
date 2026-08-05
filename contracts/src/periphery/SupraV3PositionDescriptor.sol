@@ -83,10 +83,35 @@ contract SupraV3PositionDescriptor is ISupraV3PositionDescriptor {
 
     function _symbol(address token) private view returns (string memory) {
         try IERC20Metadata(token).symbol() returns (string memory _sym) {
-            return _sym;
+            return _escapeJSON(_sym);
         } catch {
             return 'UNKNOWN';
         }
+    }
+
+    /// @notice Escapes '"' and '\' in a token-supplied string so it can't break out of the
+    /// surrounding JSON string literal. Token symbols are attacker-controlled (arbitrary
+    /// ERC20 can return any string), so this metadata must not be interpolated unescaped.
+    function _escapeJSON(string memory input) internal pure returns (string memory) {
+        bytes memory raw = bytes(input);
+        uint256 extra = 0;
+        for (uint256 i = 0; i < raw.length; i++) {
+            if (raw[i] == '"' || raw[i] == '\\') {
+                extra++;
+            }
+        }
+        if (extra == 0) {
+            return input;
+        }
+        bytes memory escaped = new bytes(raw.length + extra);
+        uint256 j = 0;
+        for (uint256 i = 0; i < raw.length; i++) {
+            if (raw[i] == '"' || raw[i] == '\\') {
+                escaped[j++] = '\\';
+            }
+            escaped[j++] = raw[i];
+        }
+        return string(escaped);
     }
 
     function _addressToString(address addr) private pure returns (string memory) {

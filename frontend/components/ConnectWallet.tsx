@@ -1,14 +1,38 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect, useBalance } from 'wagmi';
-import { injected } from 'wagmi/connectors';
+import { useAccount, useConnect, useDisconnect, useBalance, useSwitchChain } from 'wagmi';
 import { formatEther } from 'viem';
+import { supraEvmDevnet } from '@/config/chains';
 
 export function ConnectWallet() {
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { address, isConnected, chainId } = useAccount();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { data: balance } = useBalance({ address });
+
+  const wrongNetwork = isConnected && chainId !== supraEvmDevnet.id;
+
+  if (isConnected && wrongNetwork) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-red-500">Wrong network</span>
+        <button
+          onClick={() => switchChain({ chainId: supraEvmDevnet.id })}
+          disabled={isSwitching}
+          className="px-3 py-1.5 rounded-lg bg-yellow-500 text-white text-sm hover:bg-yellow-600 transition-colors disabled:opacity-50"
+        >
+          {isSwitching ? 'Switching...' : `Switch to ${supraEvmDevnet.name}`}
+        </button>
+        <button
+          onClick={() => disconnect()}
+          className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-colors"
+        >
+          Disconnect
+        </button>
+      </div>
+    );
+  }
 
   if (isConnected) {
     return (
@@ -34,33 +58,27 @@ export function ConnectWallet() {
   }
 
   const hasStarKey = typeof window !== 'undefined' && !!window.starkey?.ethereum;
+  const starkeyConnector = connectors.find((c) => c.id === 'starkey');
+  const fallbackConnector = connectors.find((c) => c.id !== 'starkey') ?? connectors[0];
 
   return (
     <div className="flex gap-2">
-      {hasStarKey && (
+      {hasStarKey && starkeyConnector && (
         <button
-          onClick={() =>
-            connect({
-              connector: injected({
-                target: {
-                  id: 'starkey',
-                  name: 'StarKey',
-                  provider: () => (typeof window !== 'undefined' ? window.starkey?.ethereum : undefined),
-                },
-              }),
-            })
-          }
+          onClick={() => connect({ connector: starkeyConnector })}
           className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
         >
           Connect StarKey
         </button>
       )}
-      <button
-        onClick={() => connect({ connector: injected() })}
-        className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
-      >
-        {hasStarKey ? 'Connect MetaMask' : 'Connect Wallet'}
-      </button>
+      {fallbackConnector && (
+        <button
+          onClick={() => connect({ connector: fallbackConnector })}
+          className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
+        >
+          {hasStarKey ? 'Connect MetaMask' : 'Connect Wallet'}
+        </button>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   useAccount,
   useReadContract,
@@ -51,7 +51,11 @@ export function SwapCard() {
     CONTRACTS_CONFIGURED && tokenIn && tokenOut && tokenIn.address !== tokenOut.address && parsedAmountIn
   );
 
-  const { data: quoteData, isFetching: isQuoting } = useReadContract({
+  const {
+    data: quoteData,
+    isFetching: isQuoting,
+    error: quoteError,
+  } = useReadContract({
     address: QUOTER_ADDRESS,
     abi: quoterAbi,
     functionName: 'quoteExactInputSingle',
@@ -69,7 +73,7 @@ export function SwapCard() {
 
   const amountOut = (quoteData as [bigint, bigint, number, bigint] | undefined)?.[0];
 
-  const { data: allowance } = useReadContract({
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: tokenIn?.address,
     abi: erc20Abi,
     functionName: 'allowance',
@@ -84,6 +88,12 @@ export function SwapCard() {
   const approve = useWriteContract();
   const approveReceipt = useWaitForTransactionReceipt({ hash: approve.data });
 
+  useEffect(() => {
+    if (approveReceipt.isSuccess) {
+      refetchAllowance();
+    }
+  }, [approveReceipt.isSuccess, refetchAllowance]);
+
   const swap = useWriteContract();
   const swapReceipt = useWaitForTransactionReceipt({ hash: swap.data });
 
@@ -91,6 +101,8 @@ export function SwapCard() {
     ? parseContractError(swap.error)
     : approve.error
     ? parseContractError(approve.error)
+    : quoteError
+    ? `Failed to fetch quote: ${parseContractError(quoteError)}`
     : null;
 
   function handleApprove() {
@@ -192,6 +204,8 @@ export function SwapCard() {
           <div className="flex-1 text-2xl">
             {isQuoting
               ? '...'
+              : quoteError
+              ? '—'
               : amountOut !== undefined && tokenOut
               ? formatUnits(amountOut, tokenOut.decimals)
               : '0.0'}

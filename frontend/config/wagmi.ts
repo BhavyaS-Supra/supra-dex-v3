@@ -2,10 +2,21 @@ import { http, createConfig, createStorage, cookieStorage } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { supraEvmDevnet } from './chains';
 
+// Registered as a named connector (rather than constructed inline at click time) so wagmi
+// can track and reconnect it like any other connector.
+const starkeyConnector = injected({
+  target: {
+    id: 'starkey',
+    name: 'StarKey',
+    provider: () => (typeof window !== 'undefined' ? window.starkey?.ethereum : undefined),
+  },
+});
+
 export const config = createConfig({
   chains: [supraEvmDevnet],
   connectors: [
-    injected(), // Auto-detects StarKey's injected EVM provider and MetaMask
+    starkeyConnector,
+    injected(), // Falls back to any other injected provider (e.g. MetaMask)
   ],
   transports: {
     // Always pass an explicit URL to http() - calling it with no argument does not reliably
