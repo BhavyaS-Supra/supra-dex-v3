@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useBalance, useSwitchChain } from 'wagmi';
 import { formatEther } from 'viem';
 import { supraEvmDevnet } from '@/config/chains';
@@ -10,6 +11,13 @@ export function ConnectWallet() {
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { data: balance } = useBalance({ address });
+
+  // Wallet presence can only be known on the client, so start false (matching SSR) and
+  // detect after mount to avoid a hydration mismatch between server and client markup.
+  const [hasStarKey, setHasStarKey] = useState(false);
+  useEffect(() => {
+    setHasStarKey(!!window.starkey?.ethereum);
+  }, []);
 
   const wrongNetwork = isConnected && chainId !== supraEvmDevnet.id;
 
@@ -57,7 +65,6 @@ export function ConnectWallet() {
     );
   }
 
-  const hasStarKey = typeof window !== 'undefined' && !!window.starkey?.ethereum;
   const starkeyConnector = connectors.find((c) => c.id === 'starkey');
   const fallbackConnector = connectors.find((c) => c.id !== 'starkey') ?? connectors[0];
 
