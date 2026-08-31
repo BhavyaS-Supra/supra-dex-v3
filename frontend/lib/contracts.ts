@@ -4,9 +4,12 @@ export const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || '0x')
 export const SWAP_ROUTER_ADDRESS = (process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS || '0x') as Address;
 export const QUOTER_ADDRESS = (process.env.NEXT_PUBLIC_QUOTER_ADDRESS || '0x') as Address;
 export const WETH9_ADDRESS = (process.env.NEXT_PUBLIC_WETH9_ADDRESS || '0x') as Address;
+export const POSITION_MANAGER_ADDRESS = (process.env.NEXT_PUBLIC_POSITION_MANAGER_ADDRESS || '0x') as Address;
 
 export const CONTRACTS_CONFIGURED =
   FACTORY_ADDRESS !== '0x' && SWAP_ROUTER_ADDRESS !== '0x' && QUOTER_ADDRESS !== '0x';
+
+export const POSITION_MANAGER_CONFIGURED = POSITION_MANAGER_ADDRESS !== '0x';
 
 export interface TokenInfo {
   symbol: string;
@@ -25,3 +28,8 @@ export const TOKEN_LIST: TokenInfo[] = (process.env.NEXT_PUBLIC_TOKEN_LIST || ''
     const [symbol, address, decimals] = entry.split(':');
     return { symbol, address: address as Address, decimals: Number(decimals || 18) };
   });
+
+export function findToken(address: string | undefined): TokenInfo | undefined {
+  if (!address) return undefined;
+  return TOKEN_LIST.find((t) => t.address.toLowerCase() === address.toLowerCase());
+}
