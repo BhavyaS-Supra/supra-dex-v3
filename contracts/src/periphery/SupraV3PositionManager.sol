@@ -69,7 +69,7 @@ contract SupraV3PositionManager is
     address private immutable _tokenDescriptor;
 
     constructor(address _factory, address _WETH9, address _tokenDescriptor_)
-        ERC721Permit('Uniswap V3 Positions NFT-V1', 'UNI-V3-POS', '1')
+        ERC721Permit('Supra V3 Positions NFT-V1', 'SUPRA-V3-POS', '1')
         PeripheryImmutableState(_factory, _WETH9)
     {
         _tokenDescriptor = _tokenDescriptor_;

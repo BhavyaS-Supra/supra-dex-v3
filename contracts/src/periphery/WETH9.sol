@@ -5,8 +5,8 @@ pragma solidity =0.7.6;
 /// @notice Standard WETH9 implementation used to wrap Supra EVM's native token so it can flow
 /// through SupraV3SwapRouter / SupraV3PositionManager like any other ERC20.
 contract WETH9 {
-    string public name = 'Wrapped Ether';
-    string public symbol = 'WETH';
+    string public name = 'Wrapped Supra';
+    string public symbol = 'WSUPRA';
     uint8 public decimals = 18;
 
     event Approval(address indexed src, address indexed guy, uint256 wad);

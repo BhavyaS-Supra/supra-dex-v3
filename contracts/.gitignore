@@ -2,6 +2,11 @@
 cache/
 out/
 
+# deploy-supra.cmd output logs
+deploy_core.log
+deploy_periphery.log
+deploy_test_tokens.log
+
 # Commonly ignored directories
 .logs/
 .ignore/

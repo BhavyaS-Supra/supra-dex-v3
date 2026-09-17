@@ -5,9 +5,16 @@ import { useAccount, useConnect, useDisconnect, useBalance, useSwitchChain } fro
 import { formatEther } from 'viem';
 import { supraEvmDevnet } from '@/config/chains';
 
+function parseConnectError(error: Error): string {
+  const msg = error.message ?? String(error);
+  if (msg.includes('User rejected') || msg.includes('rejected the request')) return 'Connection request rejected.';
+  return msg.length > 160 ? msg.slice(0, 160) + '...' : msg;
+}
+
 export function ConnectWallet() {
   const { address, isConnected, chainId } = useAccount();
-  const { connect, connectors } = useConnect();
+  const { connect, connectors, error: connectError, isPending: isConnecting, variables: connectVariables } =
+    useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { data: balance } = useBalance({ address });
@@ -68,24 +75,32 @@ export function ConnectWallet() {
   const starkeyConnector = connectors.find((c) => c.id === 'starkey');
   const fallbackConnector = connectors.find((c) => c.id !== 'starkey') ?? connectors[0];
 
+  const connectingStarkey = isConnecting && connectVariables?.connector === starkeyConnector;
+  const connectingFallback = isConnecting && connectVariables?.connector === fallbackConnector;
+
   return (
-    <div className="flex gap-2">
-      {hasStarKey && starkeyConnector && (
-        <button
-          onClick={() => connect({ connector: starkeyConnector })}
-          className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
-        >
-          Connect StarKey
-        </button>
-      )}
-      {fallbackConnector && (
-        <button
-          onClick={() => connect({ connector: fallbackConnector })}
-          className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
-        >
-          {hasStarKey ? 'Connect MetaMask' : 'Connect Wallet'}
-        </button>
-      )}
+    <div className="flex flex-col items-end gap-1.5">
+      <div className="flex gap-2">
+        {hasStarKey && starkeyConnector && (
+          <button
+            onClick={() => connect({ connector: starkeyConnector })}
+            disabled={isConnecting}
+            className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {connectingStarkey ? 'Connecting...' : 'Connect StarKey'}
+          </button>
+        )}
+        {fallbackConnector && (
+          <button
+            onClick={() => connect({ connector: fallbackConnector })}
+            disabled={isConnecting}
+            className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+          >
+            {connectingFallback ? 'Connecting...' : hasStarKey ? 'Connect MetaMask' : 'Connect Wallet'}
+          </button>
+        )}
+      </div>
+      {connectError && <span className="text-xs text-red-500">{parseConnectError(connectError)}</span>}
     </div>
   );
 }

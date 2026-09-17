@@ -16,7 +16,7 @@ import {
   POSITION_MANAGER_ADDRESS,
   POSITION_MANAGER_CONFIGURED,
 } from '@/lib/contracts';
-import { FEE_TIERS, tickToPrice } from '@/lib/univ3Math';
+import { FEE_TIERS, getAmountsForLiquidity, tickToPrice } from '@/lib/univ3Math';
 import { useTokenMetadata, type TokenMeta } from '@/hooks/useTokenMetadata';
 import factoryAbiJson from '@/lib/abi/SupraV3Factory.json';
 import poolAbiJson from '@/lib/abi/SupraV3Pool.json';
@@ -29,6 +29,7 @@ const positionManagerAbi = positionManagerAbiJson as Abi;
 const DEADLINE_SECONDS = 20 * 60;
 const MAX_UINT128 = 2n ** 128n - 1n;
 const PERCENT_OPTIONS = [25, 50, 75, 100];
+const DEFAULT_SLIPPAGE_BPS = 50; // 0.5%
 
 interface Position {
   tokenId: bigint;
@@ -84,6 +85,7 @@ function PositionRow({
     functionName: 'slot0',
     query: { enabled: poolExists },
   });
+  const sqrtPriceX96 = (slot0 as [bigint, number, ...unknown[]] | undefined)?.[0];
   const currentTick = (slot0 as [bigint, number, ...unknown[]] | undefined)?.[1];
   const inRange =
     currentTick !== undefined && currentTick >= position.tickLower && currentTick < position.tickUpper;
@@ -121,8 +123,16 @@ function PositionRow({
   const liquidityToRemove = (position.liquidity * BigInt(pct)) / 100n;
 
   function handleRemove() {
-    if (!address || liquidityToRemove === 0n) return;
+    if (!address || liquidityToRemove === 0n || sqrtPriceX96 === undefined) return;
     decrease.reset();
+    const { amount0, amount1 } = getAmountsForLiquidity(
+      sqrtPriceX96,
+      position.tickLower,
+      position.tickUpper,
+      liquidityToRemove
+    );
+    const amount0Min = BigInt(Math.floor(amount0 * (1 - DEFAULT_SLIPPAGE_BPS / 10_000)));
+    const amount1Min = BigInt(Math.floor(amount1 * (1 - DEFAULT_SLIPPAGE_BPS / 10_000)));
     decrease.mutate({
       address: POSITION_MANAGER_ADDRESS,
       abi: positionManagerAbi,
@@ -131,8 +141,8 @@ function PositionRow({
         {
           tokenId: position.tokenId,
           liquidity: liquidityToRemove,
-          amount0Min: 0n,
-          amount1Min: 0n,
+          amount0Min,
+          amount1Min,
           deadline: BigInt(Math.floor(Date.now() / 1000) + DEADLINE_SECONDS),
         },
       ],
@@ -225,7 +235,7 @@ function PositionRow({
           </div>
           <button
             onClick={handleRemove}
-            disabled={busy || liquidityToRemove === 0n}
+            disabled={busy || liquidityToRemove === 0n || sqrtPriceX96 === undefined}
             className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-medium disabled:opacity-50"
           >
             {busy ? 'Processing...' : `Remove ${pct}% & Collect`}

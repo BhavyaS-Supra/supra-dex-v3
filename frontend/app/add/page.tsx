@@ -19,6 +19,7 @@ import {
   TOKEN_LIST,
   type TokenInfo,
 } from '@/lib/contracts';
+import { supraEvmDevnet } from '@/config/chains';
 import {
   FEE_TIERS,
   MAX_TICK,
@@ -504,7 +505,7 @@ function AddLiquidityForm() {
               Position minted:{' '}
               <a
                 className="underline"
-                href={`https://sepolia.etherscan.io/tx/${mint.data}`}
+                href={`${supraEvmDevnet.blockExplorers?.default.url}/tx/${mint.data}`}
                 target="_blank"
                 rel="noreferrer"
               >

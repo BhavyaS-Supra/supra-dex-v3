@@ -65,6 +65,33 @@ export function suggestAmount1FromAmount0(
   return liquidity * (sqrtP - sqrtPa);
 }
 
+/// Estimates the raw token0/token1 amounts a given liquidity removal would return, from the pool's
+/// current sqrtPriceX96 and the position's tick range. Used to derive a slippage-protected
+/// amount0Min/amount1Min for decreaseLiquidity - same float-precision caveat as the rest of this file
+/// applies, so callers should apply a slippage tolerance rather than using this as an exact minimum.
+export function getAmountsForLiquidity(
+  sqrtPriceX96: bigint,
+  tickLower: number,
+  tickUpper: number,
+  liquidity: bigint
+): { amount0: number; amount1: number } {
+  const sqrtRatioCurrent = Number(sqrtPriceX96) / 2 ** 96;
+  const sqrtRatioLower = Math.pow(1.0001, tickLower / 2);
+  const sqrtRatioUpper = Math.pow(1.0001, tickUpper / 2);
+  const l = Number(liquidity);
+
+  if (sqrtRatioCurrent <= sqrtRatioLower) {
+    return { amount0: l * (1 / sqrtRatioLower - 1 / sqrtRatioUpper), amount1: 0 };
+  }
+  if (sqrtRatioCurrent >= sqrtRatioUpper) {
+    return { amount0: 0, amount1: l * (sqrtRatioUpper - sqrtRatioLower) };
+  }
+  return {
+    amount0: l * (1 / sqrtRatioCurrent - 1 / sqrtRatioUpper),
+    amount1: l * (sqrtRatioCurrent - sqrtRatioLower),
+  };
+}
+
 export function suggestAmount0FromAmount1(
   amount1: number,
   currentPrice: number,

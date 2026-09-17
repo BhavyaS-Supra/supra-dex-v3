@@ -16,7 +16,7 @@ quote_style = "preserve"
 line_length = 120
 
 [rpc_endpoints]
-supra_evm_devnet = "${SUPRA_EVM_RPC_URL}"
+supra_evm_devnet = "http://91.134.205.161:27000/rpc/v1/eth/wallet_integration"
 supra_evm_testnet = "${SUPRA_EVM_TESTNET_RPC_URL}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
