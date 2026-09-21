@@ -1,6 +1,7 @@
 import { http, createConfig, createStorage, cookieStorage } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { supraEvmDevnet } from './chains';
+import { getRpcUrl } from './rpc';
 
 // Registered as a named connector (rather than constructed inline at click time) so wagmi
 // can track and reconnect it like any other connector.
@@ -21,9 +22,7 @@ export const config = createConfig({
   transports: {
     // Always pass an explicit URL to http() - calling it with no argument does not reliably
     // resolve a custom chain's RPC URL.
-    [supraEvmDevnet.id]: http(
-      process.env.NEXT_PUBLIC_SUPRA_EVM_RPC_URL || 'https://rpc-multivm.supra.com'
-    ),
+    [supraEvmDevnet.id]: http(getRpcUrl()),
   },
   ssr: true,
   storage: createStorage({ storage: cookieStorage }),
