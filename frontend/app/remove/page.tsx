@@ -6,9 +6,10 @@ import {
   useAccount,
   useReadContract,
   useReadContracts,
-  useWriteContract,
+  
   useWaitForTransactionReceipt,
 } from 'wagmi';
+import { useWriteContractWithGas } from '@/hooks/useWriteContractWithGas';
 import { formatUnits, zeroAddress, type Abi, type Address } from 'viem';
 import {
   CONTRACTS_CONFIGURED,
@@ -90,9 +91,9 @@ function PositionRow({
   const inRange =
     currentTick !== undefined && currentTick >= position.tickLower && currentTick < position.tickUpper;
 
-  const decrease = useWriteContract();
+  const decrease = useWriteContractWithGas();
   const decreaseReceipt = useWaitForTransactionReceipt({ hash: decrease.data });
-  const collect = useWriteContract();
+  const collect = useWriteContractWithGas();
   const collectReceipt = useWaitForTransactionReceipt({ hash: collect.data });
 
   useEffect(() => {

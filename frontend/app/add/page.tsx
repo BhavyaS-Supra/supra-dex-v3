@@ -7,9 +7,10 @@ import {
   useAccount,
   useReadContract,
   useReadContracts,
-  useWriteContract,
+  
   useWaitForTransactionReceipt,
 } from 'wagmi';
+import { useWriteContractWithGas } from '@/hooks/useWriteContractWithGas';
 import { parseUnits, type Abi, type Address } from 'viem';
 import {
   CONTRACTS_CONFIGURED,
@@ -233,16 +234,16 @@ function AddLiquidityForm() {
   const needsApproval0 = Boolean(parsedAmount0 && (allowance0 === undefined || allowance0 < parsedAmount0));
   const needsApproval1 = Boolean(parsedAmount1 && (allowance1 === undefined || allowance1 < parsedAmount1));
 
-  const approve0 = useWriteContract();
+  const approve0 = useWriteContractWithGas();
   const approve0Receipt = useWaitForTransactionReceipt({ hash: approve0.data });
-  const approve1 = useWriteContract();
+  const approve1 = useWriteContractWithGas();
   const approve1Receipt = useWaitForTransactionReceipt({ hash: approve1.data });
 
   useEffect(() => {
     if (approve0Receipt.isSuccess || approve1Receipt.isSuccess) refetchAllowances();
   }, [approve0Receipt.isSuccess, approve1Receipt.isSuccess, refetchAllowances]);
 
-  const mint = useWriteContract();
+  const mint = useWriteContractWithGas();
   const mintReceipt = useWaitForTransactionReceipt({ hash: mint.data });
 
   useEffect(() => {

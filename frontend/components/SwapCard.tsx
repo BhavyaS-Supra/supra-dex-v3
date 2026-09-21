@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   useAccount,
   useReadContract,
-  useWriteContract,
+  
   useWaitForTransactionReceipt,
 } from 'wagmi';
+import { useWriteContractWithGas } from '@/hooks/useWriteContractWithGas';
 import { parseUnits, formatUnits } from 'viem';
 import { CONTRACTS_CONFIGURED, QUOTER_ADDRESS, SWAP_ROUTER_ADDRESS, TOKEN_LIST } from '@/lib/contracts';
 import swapRouterAbi from '@/lib/abi/SupraV3SwapRouter.json';
@@ -85,7 +86,7 @@ export function SwapCard() {
     parsedAmountIn && (allowance === undefined || (allowance as bigint) < parsedAmountIn)
   );
 
-  const approve = useWriteContract();
+  const approve = useWriteContractWithGas();
   const approveReceipt = useWaitForTransactionReceipt({ hash: approve.data });
 
   useEffect(() => {
@@ -94,13 +95,18 @@ export function SwapCard() {
     }
   }, [approveReceipt.isSuccess, refetchAllowance]);
 
-  const swap = useWriteContract();
+  const swap = useWriteContractWithGas();
   const swapReceipt = useWaitForTransactionReceipt({ hash: swap.data });
 
+  const swapReverted = swapReceipt.data?.status === 'reverted';
   const errorMessage = swap.error
     ? parseContractError(swap.error)
     : approve.error
     ? parseContractError(approve.error)
+    : swapReceipt.error
+    ? parseContractError(swapReceipt.error)
+    : swapReverted
+    ? 'Swap transaction reverted on-chain.'
     : quoteError
     ? `Failed to fetch quote: ${parseContractError(quoteError)}`
     : null;
@@ -246,7 +252,7 @@ export function SwapCard() {
         </button>
       )}
 
-      {swapReceipt.isSuccess && (
+      {swapReceipt.isSuccess && !swapReverted && (
         <div className="text-sm text-green-600">Swap confirmed: {swap.data}</div>
       )}
       {errorMessage && <div className="text-sm text-red-500">{errorMessage}</div>}

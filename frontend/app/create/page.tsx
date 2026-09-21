@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useReadContract, useReadContracts, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContractWithGas } from '@/hooks/useWriteContractWithGas';
 import { isAddress, zeroAddress, type Abi, type Address } from 'viem';
 import { CONTRACTS_CONFIGURED, FACTORY_ADDRESS } from '@/lib/contracts';
 import { FEE_TIERS, priceToSqrtPriceX96 } from '@/lib/univ3Math';
@@ -77,13 +78,13 @@ function CreatePairForm() {
   const slot0Data = slot0 as [bigint, ...unknown[]] | undefined;
   const initialized = Boolean(slot0Data && slot0Data[0] > 0n);
 
-  const createPool = useWriteContract();
+  const createPool = useWriteContractWithGas();
   const createPoolReceipt = useWaitForTransactionReceipt({ hash: createPool.data });
   useEffect(() => {
     if (createPoolReceipt.isSuccess) refetchPool();
   }, [createPoolReceipt.isSuccess, refetchPool]);
 
-  const initialize = useWriteContract();
+  const initialize = useWriteContractWithGas();
   const initializeReceipt = useWaitForTransactionReceipt({ hash: initialize.data });
   useEffect(() => {
     if (initializeReceipt.isSuccess) refetchSlot0();
